@@ -1,0 +1,29 @@
+# ==========================================
+# File tạm thời của Microsoft Office
+# ==========================================
+~$*
+*.tmp
+
+# ==========================================
+# Môi trường và Thư viện Node.js (Tuần 2-6)
+# ==========================================
+node_modules/
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# Thư mục uploads (không commit file người dùng)
+# Giữ lại file .gitkeep để duy trì cấu trúc thư mục
+# ==========================================
+uploads/*
+!uploads/.gitkeep
+
+# ==========================================
+# File rác của Hệ điều hành (Windows, macOS)
+# ==========================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+*.log
