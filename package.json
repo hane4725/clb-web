@@ -17,5 +17,8 @@
     "mariadb"
   ],
   "author": "Nhom_uhloj",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "mysql2": "^3.24.6"
+  }
 }
