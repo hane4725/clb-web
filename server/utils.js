@@ -18,3 +18,25 @@ export function formatDateTime(dateInput) {
 
     return `${hours}:${minutes} ${day}/${month}/${year}`;
 }
+
+
+/**
+ * Tính số chỗ còn trống của hoạt động
+ * Căn cứ: Bước 7 Tuần 2 (README.md dòng 271)
+ * @param {number} capacity - Sức chứa tối đa của hoạt động
+ * @param {number} registeredCount - Số lượng người đã đăng ký thành công
+ * @returns {number} Số chỗ còn trống (không âm)
+ */
+export function calcRemainingSeats(capacity, registeredCount = 0) {
+    const cap = Number(capacity);
+    const reg = Number(registeredCount);
+
+    // Nếu sức chứa không hợp lệ hoặc nhỏ hơn/bằng 0
+    if (isNaN(cap) || cap <= 0) return 0;
+
+    // Nếu số người đăng ký không hợp lệ hoặc âm thì coi như 0
+    const validReg = isNaN(reg) || reg < 0 ? 0 : reg;
+
+    const remaining = cap - validReg;
+    return remaining > 0 ? remaining : 0;
+}
