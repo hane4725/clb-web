@@ -40,3 +40,16 @@ export function calcRemainingSeats(capacity, registeredCount = 0) {
     const remaining = cap - validReg;
     return remaining > 0 ? remaining : 0;
 }
+
+/**
+ * Kiểm tra định dạng email hợp lệ
+ * Căn cứ: Bước 7 Tuần 2 (README.md dòng 271)
+ * @param {string} email - Địa chỉ email cần kiểm tra
+ * @returns {boolean} True nếu email đúng định dạng, ngược lại False
+ */
+export function isValidEmail(email) {
+    if (!email || typeof email !== 'string') return false;
+    // Regex kiểm tra định dạng email chuẩn: name@domain.ext
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+}
