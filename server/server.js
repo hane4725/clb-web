@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { handleApi } from './router.js';
 
 // Thư mục chứa tài nguyên tĩnh công khai
 const PUBLIC_DIR = path.resolve('public');
@@ -22,23 +23,18 @@ const server = http.createServer(async (req, res) => {
   const host = req.headers.host || 'localhost:3000';
   const url = new URL(req.url, `http://${host}`);
 
-  // API 1: Kiểm tra tình trạng sức khỏe hệ thống (Health Check)
-  if (req.method === 'GET' && url.pathname === '/api/health') {
-    res.writeHead(200, {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-    });
-    return res.end(
-      JSON.stringify({
-        status: 'ok',
-        message: 'UHL Active Web Server đang hoạt động tốt',
-        timestamp: new Date().toISOString(),
-        nodeVersion: process.version,
-        uptime: Math.floor(process.uptime()),
-        service: 'CLB Web - Sprint 2',
-      })
-    );
+  // 1. Phân luồng API (Tất cả request bắt đầu bằng /api/)
+  if (url.pathname.startsWith('/api/')) {
+    // API kiểm tra tình trạng server
+    if (req.method === 'GET' && url.pathname === '/api/health') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      return res.end(JSON.stringify({ status: 'ok', service: 'UHL Active API' }));
+    }
+
+    // Chuyển toàn bộ các API còn lại cho router xử lý
+    return await handleApi(req, res, url);
   }
+
 
   // Phục vụ file tĩnh trong thư mục public/ (chống tấn công Path Traversal)
   const reqPath = url.pathname === '/' ? 'index.html' : url.pathname.replace(/^\//, '');
