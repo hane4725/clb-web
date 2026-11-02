@@ -1,0 +1,21 @@
+{
+  "name": "clb-web",
+  "version": "1.0.0",
+  "description": "Website Quản lý Hoạt động CLB (UHL Active) - Đề cương Lab 6 tuần Thầy Vũ Duy Sơn",
+  "type": "module",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "node --watch --env-file=.env server/server.js",
+    "test": "node --test",
+    "db:reset": "node --env-file=.env db/reset.js"
+  },
+  "keywords": [
+    "uhl-active",
+    "clb-web",
+    "nodejs",
+    "vanilla-js",
+    "mariadb"
+  ],
+  "author": "Nhom_uhloj",
+  "license": "ISC"
+}

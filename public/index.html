@@ -1,20 +1,322 @@
 <!DOCTYPE html>
 <html lang="vi">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Website CLB - Sắp ra mắt</title>
+  <title>UHL Active - Website Quản lý Hoạt động CLB</title>
+  <meta name="description" content="Hệ thống Quản lý Hoạt động và Đăng ký sự kiện Câu lạc bộ sinh viên Đại học Hạ Long - Dự án Lab 6 tuần.">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
 </head>
-
 <body>
-  <div class="card">
-    <div class="badge">DỰ ÁN LAB 6 TUẦN</div>
-    <h1>Website Quản lý Hoạt động CLB </h1>
-    <p>Chào mừng bạn! Website đang được phát triển theo mô hình Scrum. Hệ thống sẽ sớm ra mắt!</p>
-    <div class="footer">Chạy trên Ubuntu Server 24.04 · Nginx Web Server</div>
-  </div>
-</body>
 
+  <!-- 1. THANH ĐIỀU HƯỚNG (NAVBAR) -->
+  <header class="navbar">
+    <div class="container nav-content">
+      <a href="/" class="logo-wrapper">
+        <div class="logo-icon">U</div>
+        <div class="logo-text">
+          <span class="logo-title">UHL ACTIVE</span>
+          <span class="logo-subtitle">CLB Sinh viên</span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="/" class="nav-link active">Trang chủ</a></li>
+          <li><a href="#activities" class="nav-link">Hoạt động</a></li>
+          <li><a href="#about" class="nav-link">Giới thiệu</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="#login" class="btn-login">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          Đăng nhập
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 2. BANNER GIỚI THIỆU (HERO BANNER) -->
+    <section class="hero-section">
+      <div class="hero-banner">
+        <div class="hero-badge">CÂU LẠC BỘ SINH VIÊN ĐẠI HỌC HẠ LONG</div>
+        <h1 class="hero-title">HOẠT ĐỘNG CLB</h1>
+        <p class="hero-subtitle">Khám phá các hoạt động tình nguyện, học thuật, thể thao và văn hóa sôi động sắp diễn ra.</p>
+
+        <div class="hero-slogan-box">
+          <div class="slogan-calligraphy">
+            Kết nối<br>Lan tỏa<br>Phát triển
+          </div>
+          <div class="slogan-sub">UHL Active 2026</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. KHUNG HIỂN THỊ KẾT QUẢ API HEALTH CHECK (Nhiệm vụ 6 Tuần 2) -->
+    <section class="health-widget" id="health-widget-section">
+      <div class="health-left">
+        <div class="health-indicator">
+          <span class="health-pulse" id="health-pulse"></span>
+          <span class="health-dot" id="health-dot"></span>
+        </div>
+        <div class="health-title-group">
+          <h3>
+            <span id="health-status-title">Đang kiểm tra kết nối API...</span>
+            <span class="health-endpoint-badge">GET /api/health</span>
+          </h3>
+          <p class="health-status-desc" id="health-status-desc">Đang gửi yêu cầu tới máy chủ Node.js...</p>
+        </div>
+      </div>
+
+      <div class="health-details">
+        <div class="health-metric">
+          <div class="metric-label">Thời gian chạy (Uptime)</div>
+          <div class="metric-val" id="metric-uptime">--</div>
+        </div>
+        <div class="health-metric">
+          <div class="metric-label">Thời gian máy chủ</div>
+          <div class="metric-val" id="metric-time">--:--:--</div>
+        </div>
+        <button type="button" class="btn-refresh-health" id="btn-refresh-health" title="Gọi lại API /api/health">
+          🔄 Kiểm tra lại
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. THANH TÌM KIẾM & BỘ LỌC DANH MỤC -->
+    <section class="search-filter-section" id="activities">
+      <div class="search-box-wrapper">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="search-input" 
+          class="search-input" 
+          placeholder="Tìm kiếm hoạt động (Ví dụ: Hiến máu tình nguyện, Bóng đá...)"
+          autocomplete="off"
+        >
+        <button type="button" id="btn-search" class="btn-search">Tìm kiếm</button>
+      </div>
+
+      <!-- Bộ lọc danh mục (Khớp mẫu thiết kế của Lan) -->
+      <div class="filter-pills">
+        <button type="button" class="pill-btn active" data-category="all">Tất cả</button>
+        <button type="button" class="pill-btn" data-category="study">Học tập</button>
+        <button type="button" class="pill-btn" data-category="sports">Thể thao</button>
+        <button type="button" class="pill-btn" data-category="volunteer">Tình nguyện</button>
+        <button type="button" class="pill-btn" data-category="culture">Văn hóa</button>
+        <button type="button" class="pill-btn" data-category="skills">Kỹ năng</button>
+      </div>
+    </section>
+
+    <!-- 5. DANH SÁCH HOẠT ĐỘNG (LƯỚI 6 THẺ THEO WIREFRAME) -->
+    <section class="activities-section">
+      <div class="section-header">
+        <h2 class="section-title">Danh sách hoạt động nổi bật</h2>
+        <span class="section-count">Hiển thị 6 / 12 hoạt động</span>
+      </div>
+
+      <div class="activity-grid">
+        <!-- Thẻ 1: Hiến máu (Hoạt động F1.2 trong 002_seed.sql) -->
+        <article class="activity-card">
+          <div class="card-img-wrapper" style="background: linear-gradient(135deg, #fecdd3, #fda4af);">
+            <div style="font-size: 60px; text-align: center; line-height: 180px;">🩸</div>
+            <span class="card-badge tag-volunteer">Tình nguyện</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Ngày hội hiến máu tình nguyện - Giọt hồng tri ân</h3>
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span>Hội trường Tòa nhà A</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏰</span>
+                <span>05/11/2026 · 07:30 - 11:30</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="capacity-badge">
+                <span>👥</span>
+                <span>32 / 50 chỗ</span>
+              </div>
+              <a href="#detail" class="btn-detail-link">Xem chi tiết &rarr;</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Thẻ 2: Sinh hoạt CLB / Workshop Node.js -->
+        <article class="activity-card">
+          <div class="card-img-wrapper" style="background: linear-gradient(135deg, #bae6fd, #7dd3fc);">
+            <div style="font-size: 60px; text-align: center; line-height: 180px;">💻</div>
+            <span class="card-badge tag-tech">Học thuật</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Hội thảo: Lập trình Web Fullstack với Node.js thuần</h3>
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span>Phòng Lab 402 - Nhà C</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏰</span>
+                <span>08/11/2026 · 14:00 - 17:00</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="capacity-badge">
+                <span>👥</span>
+                <span>18 / 30 chỗ</span>
+              </div>
+              <a href="#detail" class="btn-detail-link">Xem chi tiết &rarr;</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Thẻ 3: Bóng đá -->
+        <article class="activity-card">
+          <div class="card-img-wrapper" style="background: linear-gradient(135deg, #a7f3d0, #6ee7b7);">
+            <div style="font-size: 60px; text-align: center; line-height: 180px;">⚽</div>
+            <span class="card-badge tag-sports">Thể thao</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Giải bóng đá mini UHL Active Cup 2026</h3>
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span>Sân bóng cỏ nhân tạo</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏰</span>
+                <span>12/11/2026 · 08:00 - 17:00</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="capacity-badge">
+                <span>👥</span>
+                <span>24 / 40 chỗ</span>
+              </div>
+              <a href="#detail" class="btn-detail-link">Xem chi tiết &rarr;</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Thẻ 4: Tình nguyện xanh -->
+        <article class="activity-card">
+          <div class="card-img-wrapper" style="background: linear-gradient(135deg, #ddd6fe, #c4b5fd);">
+            <div style="font-size: 60px; text-align: center; line-height: 180px;">🌱</div>
+            <span class="card-badge tag-volunteer">Tình nguyện</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Chiến dịch Chủ nhật xanh: Dọn sạch khuôn viên KTX</h3>
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span>Cổng Ký túc xá sinh viên</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏰</span>
+                <span>16/11/2026 · 07:00 - 10:30</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="capacity-badge">
+                <span>👥</span>
+                <span>20 / 35 chỗ</span>
+              </div>
+              <a href="#detail" class="btn-detail-link">Xem chi tiết &rarr;</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Thẻ 5: Ý tưởng sáng tạo -->
+        <article class="activity-card">
+          <div class="card-img-wrapper" style="background: linear-gradient(135deg, #fef08a, #fde047);">
+            <div style="font-size: 60px; text-align: center; line-height: 180px;">💡</div>
+            <span class="card-badge tag-tech">Khởi nghiệp</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Cuộc thi Ý tưởng sáng tạo khởi nghiệp UHL Innovation</h3>
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span>Hội trường lớn 500 chỗ</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏰</span>
+                <span>28/11/2026 · 08:00 - 16:30</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="capacity-badge">
+                <span>👥</span>
+                <span>15 / 30 chỗ</span>
+              </div>
+              <a href="#detail" class="btn-detail-link">Xem chi tiết &rarr;</a>
+            </div>
+          </div>
+        </article>
+
+        <!-- Thẻ 6: Âm nhạc Acoustic -->
+        <article class="activity-card">
+          <div class="card-img-wrapper" style="background: linear-gradient(135deg, #fed7aa, #fdba74);">
+            <div style="font-size: 60px; text-align: center; line-height: 180px;">🎸</div>
+            <span class="card-badge tag-sports">Văn hóa</span>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Đêm nhạc Acoustic: Giai điệu mùa Đông gây quỹ thiện nguyện</h3>
+            <div class="card-meta-list">
+              <div class="meta-item">
+                <span class="meta-icon">📍</span>
+                <span>Sân khấu ngoài trời nhà B</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-icon">⏰</span>
+                <span>25/11/2026 · 19:00 - 21:30</span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="capacity-badge">
+                <span>👥</span>
+                <span>40 / 50 chỗ</span>
+              </div>
+              <a href="#detail" class="btn-detail-link">Xem chi tiết &rarr;</a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <!-- Phân trang (Pagination) -->
+      <nav class="pagination-wrapper" aria-label="Phân trang hoạt động">
+        <button type="button" class="page-btn" aria-label="Trang trước">&larr;</button>
+        <button type="button" class="page-btn active">1</button>
+        <button type="button" class="page-btn">2</button>
+        <button type="button" class="page-btn">3</button>
+        <button type="button" class="page-btn">4</button>
+        <button type="button" class="page-btn">5</button>
+        <button type="button" class="page-btn" aria-label="Trang tiếp theo">&rarr;</button>
+      </nav>
+    </section>
+  </main>
+
+  <!-- 6. CHÂN TRANG (FOOTER) -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <span class="footer-brand">UHL ACTIVE</span> · Hệ thống Quản lý Hoạt động & Minh chứng CLB
+      </div>
+      <div>
+        Dự án Lab 6 tuần · Sprint 2 (Frontend & Backend Frameworkless)
+      </div>
+    </div>
+  </footer>
+
+  <!-- File JavaScript trang chủ (Bước 6) -->
+  <script type="module" src="js/home.js"></script>
+</body>
 </html>
