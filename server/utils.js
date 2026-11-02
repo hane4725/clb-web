@@ -53,3 +53,25 @@ export function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email.trim());
 }
+
+
+/**
+ * Chuẩn hoá hiển thị trạng thái minh chứng và hoạt động sang tiếng Việt
+ * Căn cứ: Bước 7 Tuần 2 (README.md dòng 271)
+ * @param {string} status - Mã trạng thái (PENDING, APPROVED, REJECTED, UPCOMING...)
+ * @returns {string} Trạng thái tiếng Việt thân thiện
+ */
+export function formatStatus(status) {
+    if (!status || typeof status !== 'string') return 'Không xác định';
+
+    const map = {
+        PENDING: 'Chờ duyệt',
+        APPROVED: 'Đã duyệt',
+        REJECTED: 'Từ chối',
+        UPCOMING: 'Sắp diễn ra',
+        ONGOING: 'Đang diễn ra',
+        ENDED: 'Đã kết thúc',
+    };
+
+    return map[status.trim().toUpperCase()] ?? 'Không xác định';
+}
