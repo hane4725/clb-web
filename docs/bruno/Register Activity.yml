@@ -1,0 +1,59 @@
+info:
+  name: Register Activity
+  type: http
+  seq: 7
+
+http:
+  method: POST
+  url: http://localhost:3000/api/activities/12/registrations
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Register Activity API
+
+  ## 1. Description
+
+  Đăng ký tham gia một hoạt động của câu lạc bộ UHL Active.
+
+  ## 2. Method
+
+  POST
+
+  ## 3. Endpoint
+
+  `/api/activities/:id/registrations`
+
+  ## 4. Request Parameters
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | id | number | ID của hoạt động cần đăng ký |
+
+  ## 5. Request Body
+
+  Không có.
+
+  ## 6. Success Response
+
+  Status Code: `200 OK` (cần kiểm tra Status Code thực tế trong Bruno)
+
+  ```
+  {
+    "message": "Đăng ký tham gia thành công",
+    "registration_id": 16
+  }
+  ```
+
+  ## 7. Notes
+
+  - API được sử dụng để đăng ký tham gia hoạt động.
+  - `id`: ID của hoạt động cần đăng ký.
+  - `registration_id`: ID của bản ghi đăng ký vừa được tạo.
+  - `message`: Thông báo kết quả đăng ký thành công.
