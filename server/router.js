@@ -9,6 +9,7 @@ import {
     registerActivity,
     cancelRegistration,
     getRegistrations,
+    getMyRegistrations
 } from './routes/registrations.js';
 
 /**
@@ -69,7 +70,7 @@ const routes = [
     { method: 'POST', pattern: /^\/api\/activities\/(\d+)\/registrations$/, handler: (req, res, { params }) => registerActivity(req, res, params[0]) },
     { method: 'DELETE', pattern: /^\/api\/activities\/(\d+)\/registrations\/me$/, handler: (req, res, { params }) => cancelRegistration(req, res, params[0]) },
     { method: 'GET', pattern: /^\/api\/activities\/(\d+)\/registrations$/, handler: (req, res, { params }) => getRegistrations(req, res, params[0]) },
-
+    { method: 'GET', pattern: /^\/api\/registrations\/me$/, handler: (req, res) => getMyRegistrations(req, res) },
 ];
 
 /**
