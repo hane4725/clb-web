@@ -1,0 +1,68 @@
+info:
+  name: Register Activity - Duplicate
+  type: http
+  seq: 13
+
+http:
+  method: POST
+  url: http://localhost:3000/api/activities/12/registrations
+  headers:
+    - name: X-User-Id
+      value: "1"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Register Activity - Duplicate API
+
+  ## 1. Description
+
+  Kiểm tra trường hợp thành viên đăng ký tham gia một hoạt động đã đăng ký trước đó.
+
+  ## 2. Method
+
+  POST
+
+  ## 3. Endpoint
+
+  `/api/activities/:id/registrations`
+
+  ## 4. Request Parameters
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | `id` | number | ID của hoạt động cần đăng ký |
+
+  ## 5. Request Headers
+
+  | Name | Value | Description |
+  | --- | --- | --- |
+  | `X-User-Id` | `1` | ID của thành viên thực hiện đăng ký |
+
+  ## 6. Request Body
+
+  Không có.
+
+  ## 7. Error Response
+
+  Status Code: `409 Conflict`
+
+  ```
+  {
+    "error": "Bạn đã đăng ký hoạt động này rồi"
+  }
+  ```
+
+  ## 8. Notes
+
+  - API được sử dụng để kiểm tra trường hợp đăng ký hoạt động trùng lặp.
+  - Thành viên có ID `1` đã đăng ký hoạt động có ID `12` trước đó.
+  - Khi gửi yêu cầu đăng ký lần thứ hai, API từ chối thao tác.
+  - `409 Conflict`: Mã trạng thái cho biết yêu cầu bị xung đột với dữ liệu hiện tại.
+  - `error`: Nội dung thông báo lỗi trả về từ API.

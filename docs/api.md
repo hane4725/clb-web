@@ -22,20 +22,25 @@ http://localhost:3000
 | 6 | DELETE | `/api/activities/:id` | Xóa hoạt động |
 | 7 | POST | `/api/activities/:id/registrations` | Đăng ký tham gia |
 | 8 | DELETE | `/api/activities/:id/registrations/me` | Hủy đăng ký |
-| 9 | GET | `/api/activities/:id/registrations` | Lấy danh sách đăng ký |
+| 9 | GET | `/api/activities/:id/registrations` | Lấy danh sách người đăng ký |
+| 10 | GET | `/api/registrations/me` | Lấy danh sách hoạt động cá nhân đã đăng ký |
 
 ### 2.1. Request Headers
 
-Các request hiện tại được kiểm thử bằng Bruno với cấu hình **No Auth**.
+Các request được kiểm thử bằng Bruno với cấu hình No Auth, chưa sử dụng cơ chế xác thực thông qua Authorization.
 
 | Header | Giá trị | Áp dụng |
 |---|---|---|
 | Content-Type | `application/json` | Request có gửi JSON Body |
+| X-User-Id | `1` | Đăng ký, hủy đăng ký và lấy danh sách đăng ký cá nhân |
 | Authorization | Không sử dụng | Các request hiện tại |
 
-Đối với request GET, DELETE và POST không có Body, không cần khai báo Content-Type nếu không gửi dữ liệu.
+**Lưu ý:**
 
-**Lưu ý:** Cấu hình No Auth phản ánh trạng thái kiểm thử hiện tại. Nếu Backend bổ sung xác thực, Frontend cần cập nhật Header Authorization theo cơ chế xác thực được thống nhất.
+- `X-User-Id` được Backend sử dụng để xác định người dùng thực hiện thao tác.
+- Nếu không truyền `X-User-Id`, Backend mặc định sử dụng User ID là `1` đối với các chức năng đăng ký, hủy đăng ký và lấy danh sách đăng ký cá nhân.
+- `X-User-Id` hiện chỉ phục vụ việc xác định người dùng trong quá trình xử lý API, không thay thế cơ chế xác thực và phân quyền.
+- Đối với request GET, DELETE và POST không có Body, không cần khai báo Content-Type nếu không gửi dữ liệu.
 
 ### 2.2. Quy ước tham số
 
@@ -43,6 +48,7 @@ Các request hiện tại được kiểm thử bằng Bruno với cấu hình *
 - `page`: Số trang cần lấy.
 - `limit`: Số lượng hoạt động trên mỗi trang.
 - `q`: Từ khóa tìm kiếm hoạt động.
+- `X-User-Id`: ID của người dùng thực hiện thao tác.
 - Các trường thời gian sử dụng định dạng ngày giờ ISO 8601.
 
 ### 2.3. Các mã HTTP
@@ -50,13 +56,13 @@ Các request hiện tại được kiểm thử bằng Bruno với cấu hình *
 | HTTP Status | Ý nghĩa | Trường hợp áp dụng |
 |---|---|---|
 | 200 OK | Request thành công | Lấy dữ liệu, cập nhật, xóa hoặc thao tác thành công nếu API trả mã này |
-| 201 Created | Tạo tài nguyên thành công | Tạo hoạt động nếu Backend trả mã này |
+| 201 Created | Tạo tài nguyên thành công | Tạo hoạt động hoặc đăng ký tham gia thành công |
 | 400 Bad Request | Dữ liệu gửi lên không hợp lệ hoặc thiếu trường bắt buộc | Ví dụ: thiếu thông tin khi tạo hoạt động |
-| 404 Not Found | Không tìm thấy tài nguyên | Ví dụ: ID hoạt động không tồn tại |
-| 409 Conflict | Dữ liệu bị xung đột | Ví dụ: đăng ký trùng lặp hoặc hoạt động hết chỗ nếu Backend xử lý theo mã này |
-| 500 Internal Server Error | Lỗi xử lý phía server | Lỗi ngoài dự kiến trong quá trình xử lý request |
+| 404 Not Found | Không tìm thấy tài nguyên | Ví dụ: ID hoạt động không tồn tại hoặc người dùng chưa đăng ký |
+| 409 Conflict | Dữ liệu bị xung đột | Ví dụ: đăng ký trùng lặp hoặc hoạt động hết chỗ |
+| 500 Internal Server Error | Lỗi xử lý phía server | Lỗi phát sinh trong quá trình xử lý request |
 
-**Lưu ý:** Bảng trên mô tả ý nghĩa các mã HTTP cần đối chiếu khi kiểm thử. Mã HTTP thực tế của từng endpoint phải được xác nhận bằng Bruno hoặc mã nguồn Backend. Không mặc định mọi trường hợp ví dụ đều trả đúng mã như bảng.
+**Lưu ý:** Mã HTTP thực tế của từng trường hợp cần được đối chiếu với mã nguồn Backend và kết quả kiểm thử bằng Bruno.
 
 ---
 
@@ -229,7 +235,7 @@ GET /api/activities/12
 }
 ```
 
-Response trên được ghi nhận khi gửi request thiếu Body. Mã HTTP cần xác nhận trực tiếp trên Bruno.
+Response lỗi trên được ghi nhận khi gửi request thiếu Body. Mã HTTP cần xác nhận trực tiếp trên Bruno.
 
 ### 3.5. Update Activity API
 
@@ -311,7 +317,8 @@ Response trên được ghi nhận khi gửi request thiếu Body. Mã HTTP cầ
 
 - **Method:** `POST`
 - **Endpoint:** `/api/activities/:id/registrations`
-- **Header:** Không yêu cầu.
+- **Header:**
+  - `X-User-Id: 1`
 - **Request Parameters:**
 
 | Parameter | Type | Description |
@@ -320,7 +327,7 @@ Response trên được ghi nhận khi gửi request thiếu Body. Mã HTTP cầ
 
 **Request Body:** Không có.
 
-**Success Response:**
+**Success Response (201 Created):**
 
 ```json
 {
@@ -329,22 +336,21 @@ Response trên được ghi nhận khi gửi request thiếu Body. Mã HTTP cầ
 }
 ```
 
-**Các trường hợp cần kiểm thử:**
+**Các trường hợp lỗi theo mã nguồn Backend:**
 
-- Đăng ký thành công.
-- Đăng ký trùng lặp.
-- Đăng ký khi hoạt động đã hết chỗ.
-- Đăng ký với ID hoạt động không tồn tại.
-
-Mã HTTP và Response của từng trường hợp cần được xác nhận bằng Bruno.
+- Hoạt động không tồn tại: `404 Not Found`.
+- Hoạt động đã hết chỗ: `409 Conflict`.
+- Người dùng đã đăng ký hoạt động: `409 Conflict`.
+- Lỗi máy chủ: `500 Internal Server Error`.
 
 ### 3.8. Cancel Registration API
 
-**Description:** Hủy đăng ký tham gia một hoạt động.
+**Description:** Hủy đăng ký tham gia một hoạt động của người dùng hiện tại.
 
 - **Method:** `DELETE`
 - **Endpoint:** `/api/activities/:id/registrations/me`
-- **Header:** Không yêu cầu.
+- **Header:**
+  - `X-User-Id: 1`
 
 **Request Parameters:**
 
@@ -354,7 +360,7 @@ Mã HTTP và Response của từng trường hợp cần được xác nhận b�
 
 **Request Body:** Không có.
 
-**Success Response:**
+**Success Response (200 OK):**
 
 ```json
 {
@@ -362,13 +368,10 @@ Mã HTTP và Response của từng trường hợp cần được xác nhận b�
 }
 ```
 
-**Các trường hợp cần kiểm thử:**
+**Các trường hợp lỗi theo mã nguồn Backend:**
 
-- Hủy đăng ký thành công.
-- Hủy đăng ký khi chưa đăng ký.
-- Hủy đăng ký với ID hoạt động không tồn tại.
-
-Mã HTTP và Response của từng trường hợp cần được xác nhận bằng Bruno.
+- Người dùng chưa đăng ký hoạt động: `404 Not Found`.
+- Lỗi máy chủ: `500 Internal Server Error`.
 
 ### 3.9. Get Activity Registrations API
 
@@ -384,15 +387,15 @@ Mã HTTP và Response của từng trường hợp cần được xác nhận b�
 |---|---|---|
 | id | number | ID của hoạt động cần xem danh sách đăng ký |
 
-**Request Body:** Không có.
-
 **Ví dụ Request:**
 
 ```text
 GET /api/activities/12/registrations
 ```
 
-**Success Response:**
+**Request Body:** Không có.
+
+**Success Response (200 OK):**
 
 ```json
 {
@@ -408,7 +411,58 @@ GET /api/activities/12/registrations
 }
 ```
 
-**HTTP Status:** Cần xác nhận mã thành công và mã lỗi khi ID hoạt động không tồn tại.
+**HTTP Status:** Cần xác nhận mã lỗi thực tế bằng Bruno.
+
+### 3.10. Get My Registrations API
+
+**Description:** Lấy danh sách các hoạt động mà người dùng hiện tại đã đăng ký tham gia.
+
+- **Method:** `GET`
+- **Endpoint:** `/api/registrations/me`
+- **Header:**
+  - `X-User-Id: 1` (mặc định là `1` nếu không truyền).
+- **Request Parameters:** Không có.
+- **Request Body:** Không có.
+
+**Ví dụ Request:**
+
+```text
+GET /api/registrations/me
+```
+
+**Success Response (200 OK):**
+
+```json
+{
+  "data": [
+    {
+      "id": 12,
+      "title": "Lễ vinh danh thủ lĩnh CLB",
+      "registration_id": 17,
+      "registered_at": "2026-11-05T04:22:36.000Z"
+    }
+  ]
+}
+```
+
+**Giải thích dữ liệu trả về:**
+
+- `id`: ID của hoạt động.
+- `title`: Tên hoạt động.
+- `registration_id`: ID của bản ghi đăng ký.
+- `registered_at`: Thời gian người dùng đăng ký hoạt động.
+
+Ngoài các trường minh họa trên, mỗi phần tử còn có các trường khác của bảng `activities` do truy vấn sử dụng `SELECT a.*`.
+
+**Error Response (500 Internal Server Error):**
+
+```json
+{
+  "error": "Lỗi máy chủ khi lấy danh sách đăng ký cá nhân: ..."
+}
+```
+
+**Lưu ý:** Dữ liệu thực tế phụ thuộc vào cơ sở dữ liệu và các trường hiện có trong bảng `activities`.
 
 ---
 
@@ -432,27 +486,32 @@ Các request sử dụng URL dạng:
 2. Mở collection UHL Active trong Bruno.
 3. Kiểm tra biến môi trường `baseUrl`.
 4. Chọn request cần kiểm thử.
-5. Nhấn Send.
-6. Kiểm tra Status Code và Response Body.
-7. Ghi nhận kết quả kiểm thử thực tế.
+5. Kiểm tra Header và Request Body nếu có.
+6. Nhấn Send.
+7. Kiểm tra Status Code và Response Body.
+8. Ghi nhận kết quả kiểm thử thực tế.
 
 ### 4.3. Các nhóm trường hợp kiểm thử
 
 | Nhóm | Nội dung |
 |---|---|
-| Thành công | Lấy danh sách, xem chi tiết, tạo, cập nhật, xóa, đăng ký, hủy đăng ký |
+| Thành công | Lấy danh sách, xem chi tiết, tạo, cập nhật, xóa, đăng ký, hủy đăng ký và lấy danh sách hoạt động cá nhân |
 | Thiếu dữ liệu | Tạo hoạt động khi thiếu trường bắt buộc |
 | Dữ liệu không hợp lệ | ID hoặc dữ liệu đầu vào sai |
 | Không tìm thấy | Truy cập hoạt động không tồn tại |
 | Trùng lặp | Đăng ký nhiều lần cùng một hoạt động |
 | Hết chỗ | Đăng ký hoạt động đã đủ số lượng người tham gia |
+| Chưa đăng ký | Hủy đăng ký khi người dùng chưa đăng ký hoạt động |
 | Lỗi server | Kiểm tra trường hợp server phát sinh lỗi |
+
+---
 
 ## 5. Ghi chú
 
-- Các API trong tài liệu được kiểm thử bằng Bruno.
-- Base URL sử dụng trong môi trường phát triển là `http://localhost:3000`.
-- Các giá trị ID trong ví dụ là dữ liệu được sử dụng trong quá trình kiểm thử.
-- Response thành công được ghi nhận từ kết quả kiểm thử thực tế.
-- Các mã HTTP và Response lỗi chưa được xác minh cần được kiểm thử bổ sung trước khi xem là kết quả nghiệm thu.
+- Các API trong tài liệu được sử dụng để kiểm thử bằng Bruno.
+- Base URL trong môi trường phát triển là `http://localhost:3000`.
+- Các giá trị ID trong ví dụ là dữ liệu minh họa hoặc dữ liệu được sử dụng trong quá trình kiểm thử.
+- Response thành công và lỗi cần được đối chiếu với kết quả thực tế từ Backend.
+- Các mã HTTP chưa được xác minh cần được kiểm thử bổ sung trước khi xem là kết quả nghiệm thu.
+- Header `X-User-Id` được sử dụng trong các chức năng đăng ký, hủy đăng ký và lấy danh sách đăng ký cá nhân.
 - Tài liệu được sử dụng làm căn cứ tham khảo khi Frontend tích hợp API trong Tuần 4.

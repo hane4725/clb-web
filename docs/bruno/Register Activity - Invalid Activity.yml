@@ -1,0 +1,69 @@
+info:
+  name: Register Activity - Invalid Activity
+  type: http
+  seq: 15
+
+http:
+  method: POST
+  url: http://localhost:3000/api/activities/99999/registrations?X-User-IdX-User-Id=1
+  params:
+    - name: X-User-IdX-User-Id
+      value: "1"
+      type: query
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Register Activity - Invalid Activity API
+
+  ## 1. Description
+
+  Kiểm tra trường hợp thành viên đăng ký tham gia một hoạt động không tồn tại trong hệ thống UHL Active.
+
+  ## 2. Method
+
+  POST
+
+  ## 3. Endpoint
+
+  `/api/activities/:id/registrations`
+
+  ## 4. Request Parameters
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | `id` | number | ID của hoạt động cần đăng ký |
+
+  ## 5. Request Headers
+
+  | Name | Value | Description |
+  | --- | --- | --- |
+  | `X-User-Id` | `1` | ID của thành viên thực hiện đăng ký |
+
+  ## 6. Request Body
+
+  Không có.
+
+  ## 7. Error Response
+
+  Status Code: `404 Not Found`
+
+  ```
+  {
+    "error": "Không tìm thấy hoạt động"
+  }
+  ```
+
+  ## 8. Notes
+
+  - API được sử dụng để kiểm tra trường hợp đăng ký một hoạt động không tồn tại.
+  - Request sử dụng ID hoạt động là `99999`.
+  - Hệ thống không tìm thấy hoạt động tương ứng nên từ chối yêu cầu đăng ký.
+  - `404 Not Found`: Không tìm thấy tài nguyên được yêu cầu.
+  - `error`: Nội dung thông báo lỗi trả về từ API.

@@ -1,0 +1,61 @@
+info:
+  name: Get My Registrations
+  type: http
+  seq: 10
+
+http:
+  method: GET
+  url: http://localhost:3000/api/registrations/me
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Get My Registrations API
+
+  ## 1. Description
+
+  Lấy danh sách các hoạt động mà thành viên hiện tại đã đăng ký tham gia câu lạc bộ UHL Active.
+
+  ## 2. Method
+
+  GET
+
+  ## 3. Endpoint
+
+  `/api/registrations/me`
+
+  ## 4. Request Headers
+
+  | Name | Value | Description |
+  | --- | --- | --- |
+  | `X-User-Id` | `1` | ID của thành viên hiện tại |
+
+  ## 5. Request Body
+
+  Không có.
+
+  ## 6. Success Response
+
+  Status Code: `200 OK` (cần kiểm tra Status Code thực tế trong Bruno).
+
+  ```
+  {
+    "data": [
+      {
+        "id": 12,
+        "title": "Lễ vinh danh thủ lĩnh CLB và Dạ hội chào năm mới 2027",
+        "description": "Tổng kết hoạt động phong trào sinh viên năm 2026 và trao bằng khen cho các cá nhân xuất sắc.",
+        "location": "Sảnh chính Tòa nhà A",
+        "start_at": "2026-12-30T11:30:00.000Z",
+        "end_at": "2026-12-30T15:00:00.000Z",
+        "capacity": 120,
+        "created_by": 1,
+        "created_at": "2026-10-20T08:00:00.000Z",
+        "registration
+  ```

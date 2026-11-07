@@ -1,0 +1,16 @@
+info:
+  name: Create Activity - Invalid Data
+  type: http
+  seq: 12
+
+http:
+  method: POST
+  url: http://localhost:3000/api/activities
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

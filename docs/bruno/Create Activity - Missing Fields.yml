@@ -1,0 +1,66 @@
+info:
+  name: Create Activity - Missing Fields
+  type: http
+  seq: 11
+
+http:
+  method: POST
+  url: http://localhost:3000/api/activities
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Hoạt động kiểm thử thiếu trường"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Create Activity - Missing Fields API
+
+  ## 1. Description
+
+  Kiểm tra trường hợp tạo hoạt động mới nhưng dữ liệu gửi lên không đầy đủ các trường bắt buộc.
+
+  ## 2. Method
+
+  POST
+
+  ## 3. Endpoint
+
+  `/api/activities`
+
+  ## 4. Request Headers
+
+  `Content-Type: application/json`
+
+  ## 5. Request Body
+
+  ```
+  {
+    "title": "Hoạt động kiểm thử thiếu trường"
+  }
+  ```
+
+  ## 6. Error Response
+
+  Status Code: `400 Bad Request` (cần kiểm tra Status Code thực tế trong Bruno).
+
+  ```
+  {
+    "error": "Vui lòng điền đầy đủ các trường bắt buộc"
+  }
+  ```
+
+  ## 7. Notes
+
+  - API được sử dụng để kiểm tra tính hợp lệ của dữ liệu khi tạo hoạt động.
+  - Request chỉ gửi trường `title`, cố tình bỏ trống các trường bắt buộc khác.
+  - API từ chối tạo hoạt động khi dữ liệu không đầy đủ.
+  - `error`: Nội dung thông báo lỗi trả về từ API.
