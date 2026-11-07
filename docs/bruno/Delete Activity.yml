@@ -1,0 +1,58 @@
+info:
+  name: Delete Activity
+  type: http
+  seq: 6
+
+http:
+  method: DELETE
+  url: http://localhost:3000/api/activities/15
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Delete Activity API
+
+  ## 1. Description
+
+  Xóa một hoạt động đã tồn tại trong câu lạc bộ UHL Active.
+
+  ## 2. Method
+
+  DELETE
+
+  ## 3. Endpoint
+
+  `/api/activities/:id`
+
+  ## 4. Request Parameters
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | id | number | ID của hoạt động cần xóa |
+
+  ## 5. Request Body
+
+  Không có.
+
+  ## 6. Success Response
+
+  Status Code: `200 OK` (cần kiểm tra Status Code thực tế trong Bruno)
+
+  ```
+  {
+    "message": "Xoá hoạt động thành công"
+  }
+  ```
+
+  ## 7. Notes
+
+  - API được sử dụng để xóa một hoạt động khỏi hệ thống.
+  - `id`: Xác định hoạt động cần xóa.
+  - Khi xóa thành công, API trả về thông báo xác nhận.
+  - Thao tác xóa có thể ảnh hưởng đến dữ liệu liên quan đến hoạt động.
