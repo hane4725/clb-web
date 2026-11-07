@@ -7,7 +7,7 @@ http:
   method: POST
   url: http://localhost:3000/api/activities/99999/registrations?X-User-IdX-User-Id=1
   params:
-    - name: X-User-IdX-User-Id
+    - name: X-User-Id
       value: "1"
       type: query
   auth: inherit
