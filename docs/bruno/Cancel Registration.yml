@@ -1,0 +1,57 @@
+info:
+  name: Cancel Registration
+  type: http
+  seq: 8
+
+http:
+  method: DELETE
+  url: http://localhost:3000/api/activities/12/registrations/me
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Cancel Registration API
+
+  ## 1. Description
+
+  Hủy đăng ký tham gia một hoạt động của câu lạc bộ UHL Active.
+
+  ## 2. Method
+
+  DELETE
+
+  ## 3. Endpoint
+
+  `/api/activities/:id/registrations/me`
+
+  ## 4. Request Parameters
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | id | number | ID của hoạt động cần hủy đăng ký |
+
+  ## 5. Request Body
+
+  Không có.
+
+  ## 6. Success Response
+
+  Status Code: `200 OK` (cần kiểm tra Status Code thực tế trong Bruno)
+
+  ```
+  {
+    "message": "Huỷ đăng ký thành công"
+  }
+  ```
+
+  ## 7. Notes
+
+  - API được sử dụng để hủy đăng ký tham gia hoạt động.
+  - `id`: ID của hoạt động cần hủy đăng ký.
+  - API trả về thông báo khi hủy đăng ký thành công.
