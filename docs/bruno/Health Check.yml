@@ -1,0 +1,54 @@
+info:
+  name: Health Check
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://localhost:3000/api/health
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Health Check API
+
+  ## 1. Description
+
+  Kiểm tra trạng thái hoạt động của server UHL Active API.
+
+  ## 2. Method
+
+  GET
+
+  ## 3. Endpoint
+
+  `/api/health`
+
+  ## 4. Request Parameters
+
+  Không có.
+
+  ## 5. Request Body
+
+  Không có.
+
+  ## 6. Success Response
+
+  **Status Code:** `200 OK`
+
+  ```
+  {
+    "status": "ok",
+    "service": "UHL Active API"
+  }
+  ```
+
+  ## 7. Notes
+
+  API được sử dụng để kiểm tra server có đang hoạt động hay không.

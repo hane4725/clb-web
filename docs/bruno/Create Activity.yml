@@ -1,0 +1,88 @@
+info:
+  name: Create Activity
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: http://localhost:3000/api/activities
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Workshop lập trình C++",
+        "description": "Buổi thực hành lập trình C++ dành cho thành viên CLB.",
+        "location": "Phòng máy PM01",
+        "start_at": "2026-12-15T08:00:00",
+        "end_at": "2026-12-15T11:00:00",
+        "capacity": 30
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Create Activity API
+
+  ## 1. Description
+
+  Tạo một hoạt động mới cho câu lạc bộ UHL Active.
+
+  ## 2. Method
+
+  POST
+
+  ## 3. Endpoint
+
+  `/api/activities`
+
+  ## 4. Request Parameters
+
+  Không có.
+
+  ## 5. Request Body
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | title | string | Tên hoạt động |
+  | description | string | Mô tả hoạt động |
+  | location | string | Địa điểm tổ chức |
+  | start_at | string | Thời gian bắt đầu |
+  | end_at | string | Thời gian kết thúc |
+  | capacity | number | Số lượng người tham gia tối đa |
+
+  Ví dụ:
+
+  ```
+  {
+    "title": "Workshop lập trình C++",
+    "description": "Buổi thực hành lập trình C++ dành cho thành viên CLB.",
+    "location": "Phòng máy PM01",
+    "start_at": "2026-12-15T08:00:00",
+    "end_at": "2026-12-15T11:00:00",
+    "capacity": 30
+  }
+  ```
+
+  ## 6. Success Response
+
+  Status Code: `200 OK` (cần kiểm tra Status Code thực tế trong Bruno)
+
+  ```
+  {
+    "id": 13,
+    "message": "Tạo hoạt động thành công"
+  }
+  ```
+
+  ## 7. Notes
+
+  - API được sử dụng để tạo hoạt động mới cho câu lạc bộ.
+  - Các trường thông tin bắt buộc phải được gửi đầy đủ trong Request Body.
+  - `id`: ID của hoạt động vừa được tạo.
+  - `message`: Thông báo kết quả tạo hoạt động.

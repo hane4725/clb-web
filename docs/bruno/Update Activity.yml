@@ -1,0 +1,89 @@
+info:
+  name: Update Activity
+  type: http
+  seq: 5
+
+http:
+  method: PATCH
+  url: http://localhost:3000/api/activities/15
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Workshop lập trình C++ nâng cao",
+        "description": "Buổi thực hành lập trình C++ dành cho thành viên CLB UHL Active.",
+        "location": "Phòng máy PM02",
+        "start_at": "2026-12-15T08:00:00",
+        "end_at": "2026-12-15T11:00:00",
+        "capacity": 35
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
+
+docs: |-
+  # Update Activity API
+
+  ## 1. Description
+
+  Cập nhật thông tin của một hoạt động đã tồn tại trong câu lạc bộ UHL Active.
+
+  ## 2. Method
+
+  PATCH
+
+  ## 3. Endpoint
+
+  `/api/activities/:id`
+
+  ## 4. Request Parameters
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | id | number | ID của hoạt động cần cập nhật |
+
+  ## 5. Request Body
+
+  | Parameter | Type | Description |
+  | --- | --- | --- |
+  | title | string | Tên hoạt động |
+  | description | string | Mô tả hoạt động |
+  | location | string | Địa điểm tổ chức |
+  | start_at | string | Thời gian bắt đầu |
+  | end_at | string | Thời gian kết thúc |
+  | capacity | number | Số lượng người tham gia tối đa |
+
+  Ví dụ:
+
+  ```
+  {
+    "title": "Workshop lập trình C++ nâng cao",
+    "description": "Buổi thực hành lập trình C++ dành cho thành viên CLB UHL Active.",
+    "location": "Phòng máy PM02",
+    "start_at": "2026-12-15T08:00:00",
+    "end_at": "2026-12-15T11:00:00",
+    "capacity": 35
+  }
+  ```
+
+  ## 6. Success Response
+
+  Status Code: `200 OK` (cần kiểm tra Status Code thực tế trong Bruno)
+
+  ```
+  {
+    "message": "Cập nhật hoạt động thành công"
+  }
+  ```
+
+  ## 7. Notes
+
+  - API được sử dụng để cập nhật thông tin hoạt động.
+  - `id`: Xác định hoạt động cần cập nhật.
+  - Request Body chứa thông tin mới của hoạt động.
+  - API trả về thông báo khi cập nhật thành công.

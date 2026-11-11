@@ -85,9 +85,14 @@ export async function createActivity(req, res) {
         const body = await readJson(req);
         const { title, description, location, start_at, end_at, capacity, created_by } = body;
 
-        // Kiểm tra dữ liệu bắt buộc
-        if (!title || !location || !start_at || !end_at || !capacity) {
+        // 1. Kiểm tra dữ liệu bắt buộc
+        if (!title || !location || !start_at || !end_at || capacity === undefined || capacity === null || capacity === '') {
             return sendJson(res, 400, { error: 'Vui lòng điền đầy đủ các trường bắt buộc' });
+        }
+        // 2. Kiểm tra kiểu dữ liệu số nguyên dương cho capacity (Căn cứ README dòng 365)
+        const capNum = Number(capacity);
+        if (!Number.isInteger(capNum) || capNum <= 0) {
+            return sendJson(res, 400, { error: 'Sức chứa (capacity) phải là số nguyên dương lớn hơn 0' });
         }
 
         const [result] = await pool.query(
@@ -125,8 +130,17 @@ export async function updateActivity(req, res, id) {
         const allowedFields = ['title', 'description', 'location', 'start_at', 'end_at', 'capacity'];
         for (const field of allowedFields) {
             if (body[field] !== undefined) {
-                updates.push(`\`${field}\` = ?`);
-                values.push(field === 'capacity' ? Number(body[field]) : body[field]);
+                if (field === 'capacity') {
+                    const capNum = Number(body[field]);
+                    if (!Number.isInteger(capNum) || capNum <= 0) {
+                        return sendJson(res, 400, { error: 'Sức chứa (capacity) phải là số nguyên dương lớn hơn 0' });
+                    }
+                    updates.push('`capacity` = ?');
+                    values.push(capNum);
+                } else {
+                    updates.push(`\`${field}\` = ?`);
+                    values.push(body[field]);
+                }
             }
         }
 

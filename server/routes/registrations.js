@@ -97,3 +97,26 @@ export async function getRegistrations(req, res, activityId) {
         sendJson(res, 500, { error: 'Lỗi máy chủ khi lấy danh sách: ' + error.message });
     }
 }
+
+/**
+ * 4. GET /api/registrations/me - Danh sách các hoạt động cá nhân tôi đã đăng ký
+ * Đạt chuẩn chỉ tiêu >= 10 endpoint của Thầy và phục vụ giao diện Tuần 4
+ */
+export async function getMyRegistrations(req, res) {
+    try {
+        const userId = parseInt(req.headers['x-user-id'] || '1', 10);
+
+        const [rows] = await pool.query(
+            `SELECT a.*, r.id as registration_id, r.created_at as registered_at
+             FROM registrations r
+             JOIN activities a ON r.activity_id = a.id
+             WHERE r.user_id = ?
+             ORDER BY r.created_at DESC`,
+            [userId]
+        );
+
+        sendJson(res, 200, { data: rows });
+    } catch (error) {
+        sendJson(res, 500, { error: 'Lỗi máy chủ khi lấy danh sách đăng ký cá nhân: ' + error.message });
+    }
+}
