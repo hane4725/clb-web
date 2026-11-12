@@ -1,57 +1,357 @@
-import test from 'node:test';
+import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 
-const BASE_URL = 'http://localhost:3000';
+const PORT = '8080';
+const BASE_URL = `http://127.0.0.1:${PORT}`;
+const DEFAULT_USER_ID = '1';
 
-test('API GET /api/activities - Server phản hồi với định dạng JSON', async () => {
-    const res = await fetch(`${BASE_URL}/api/activities`);
-    const contentType = res.headers.get('content-type');
-    assert.ok(contentType && contentType.includes('application/json'));
-    // Chấp nhận 200 khi có DB hoặc 500 khi DB chưa khởi chạy
-    assert.ok([200, 500].includes(res.status));
+let serverProcess = null;
+let createdActivityId = 1;
+
+before(async () => {
+    serverProcess = spawn(
+        process.execPath,
+        ['--env-file=.env.example', 'server/server.js'],
+        {
+            env: { ...process.env, PORT },
+            stdio: 'ignore',
+        }
+    );
+
+    for (let i = 0; i < 25; i++) {
+        try {
+            const res = await fetch(`${BASE_URL}/api/health`);
+            if (res.ok) return;
+        } catch {
+            await new Promise((r) => setTimeout(r, 200));
+        }
+    }
+    throw new Error(`Không thể khởi động server tại ${BASE_URL}`);
 });
 
-test('API GET /api/activities/1 - Trả về dữ liệu JSON hợp lệ', async () => {
-    const res = await fetch(`${BASE_URL}/api/activities/1`);
-    const contentType = res.headers.get('content-type');
-    assert.ok(contentType && contentType.includes('application/json'));
-    assert.ok([200, 404, 500].includes(res.status));
+after(() => {
+    if (serverProcess) {
+        serverProcess.kill();
+    }
 });
 
-test('API POST /api/activities - Gửi thiếu dữ liệu bắt buộc trả về lỗi 400', async () => {
+// =========================================================================
+// PHẦN 1: KIỂM THỬ 10 API CHÍNH ĐÚNG THỨ TỰ 1 -> 10 TRONG BẢNG API.MD
+// =========================================================================
+
+// 1. GET /api/health
+test('API 1: GET /api/health - Kiểm tra trạng thái server', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/health`);
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const data = await res.json();
+        assert.deepEqual(data, { status: 'ok', service: 'UHL Active API' });
+        t.diagnostic('-> 200 OK: Server hoạt động bình thường');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 1: ${res.status}`);
+    }
+});
+
+// 2. GET /api/activities
+test('API 2: GET /api/activities - Lấy danh sách hoạt động', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities?page=1&limit=10`);
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const body = await res.json();
+        assert.ok(Array.isArray(body.data));
+        assert.ok(body.pagination);
+        t.diagnostic(`-> 200 OK: Lấy danh sách thành công (total = ${body.pagination.total})`);
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 2: ${res.status}`);
+    }
+});
+
+// 3. GET /api/activities/:id
+test('API 3: GET /api/activities/:id - Lấy chi tiết hoạt động', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/12`);
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const data = await res.json();
+        assert.equal(data.id, 12);
+        t.diagnostic('-> 200 OK: Lấy chi tiết hoạt động thành công');
+    } else if (res.status === 404) {
+        t.diagnostic('-> 404 Not Found: ID hoạt động không tồn tại');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 3: ${res.status}`);
+    }
+});
+
+// 4. POST /api/activities
+test('API 4: POST /api/activities - Tạo hoạt động', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title: 'Workshop lập trình C++',
+            description: 'Buổi thực hành lập trình C++ dành cho thành viên CLB.',
+            location: 'Phòng máy PM01',
+            start_at: '2026-12-15T08:00:00',
+            end_at: '2026-12-15T11:00:00',
+            capacity: 30,
+        }),
+    });
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 201) {
+        const data = await res.json();
+        assert.ok(data.id);
+        assert.equal(data.message, 'Tạo hoạt động thành công');
+        createdActivityId = data.id;
+        t.diagnostic(`-> 201 Created: Tạo hoạt động thành công (ID = ${data.id})`);
+    } else if (res.status === 200) {
+        const data = await res.json();
+        createdActivityId = data.id;
+        t.diagnostic(`-> 200 OK: Tạo hoạt động thành công (ID = ${data.id})`);
+    } else if (res.status === 400) {
+        t.diagnostic('-> 400 Bad Request: Thiếu trường bắt buộc / dữ liệu không hợp lệ');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 4: ${res.status}`);
+    }
+});
+
+// 5. PATCH /api/activities/:id
+test('API 5: PATCH /api/activities/:id - Cập nhật hoạt động', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/${createdActivityId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            title: 'Workshop lập trình C++ nâng cao',
+            description: 'Buổi thực hành lập trình C++ dành cho thành viên CLB UHL Active.',
+            location: 'Phòng máy PM02',
+            start_at: '2026-12-15T08:00:00',
+            end_at: '2026-12-15T11:00:00',
+            capacity: 35,
+        }),
+    });
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const data = await res.json();
+        assert.equal(data.message, 'Cập nhật hoạt động thành công');
+        t.diagnostic('-> 200 OK: Cập nhật hoạt động thành công');
+    } else if (res.status === 400) {
+        t.diagnostic('-> 400 Bad Request: Dữ liệu không hợp lệ');
+    } else if (res.status === 404) {
+        t.diagnostic('-> 404 Not Found: ID hoạt động không tồn tại');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 5: ${res.status}`);
+    }
+});
+
+// 6. DELETE /api/activities/:id
+test('API 6: DELETE /api/activities/:id - Xóa hoạt động', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/${createdActivityId}`, {
+        method: 'DELETE',
+    });
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const data = await res.json();
+        assert.equal(data.message, 'Xoá hoạt động thành công');
+        t.diagnostic('-> 200 OK: Xóa hoạt động thành công');
+    } else if (res.status === 404) {
+        t.diagnostic('-> 404 Not Found: ID hoạt động không tồn tại');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 6: ${res.status}`);
+    }
+});
+
+// 7. POST /api/activities/:id/registrations (Dùng hoạt động ID = 12 có sẵn từ seed)
+test('API 7: POST /api/activities/:id/registrations - Đăng ký tham gia', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/12/registrations`, {
+        method: 'POST',
+        headers: { 'X-User-Id': DEFAULT_USER_ID },
+    });
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 201) {
+        const data = await res.json();
+        assert.equal(data.message, 'Đăng ký tham gia thành công');
+        assert.ok(data.registration_id);
+        t.diagnostic(`-> 201 Created: Đăng ký tham gia thành công (registration_id = ${data.registration_id})`);
+    } else if (res.status === 400) {
+        t.diagnostic('-> 400 Bad Request: Dữ liệu đầu vào không hợp lệ');
+    } else if (res.status === 404) {
+        t.diagnostic('-> 404 Not Found: Hoạt động không tồn tại');
+    } else if (res.status === 409) {
+        t.diagnostic('-> 409 Conflict: Hoạt động đã hết chỗ hoặc người dùng đã đăng ký');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi máy chủ');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 7: ${res.status}`);
+    }
+});
+
+// 8. DELETE /api/activities/:id/registrations/me
+test('API 8: DELETE /api/activities/:id/registrations/me - Hủy đăng ký', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/12/registrations/me`, {
+        method: 'DELETE',
+        headers: { 'X-User-Id': DEFAULT_USER_ID },
+    });
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const data = await res.json();
+        assert.equal(data.message, 'Huỷ đăng ký thành công');
+        t.diagnostic('-> 200 OK: Hủy đăng ký thành công');
+    } else if (res.status === 404) {
+        t.diagnostic('-> 404 Not Found: Người dùng chưa đăng ký hoạt động');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi máy chủ');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 8: ${res.status}`);
+    }
+});
+
+// 9. GET /api/activities/:id/registrations
+test('API 9: GET /api/activities/:id/registrations - Lấy danh sách người đăng ký', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/12/registrations`);
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const body = await res.json();
+        assert.ok(Array.isArray(body.data));
+        t.diagnostic(`-> 200 OK: Lấy danh sách người đăng ký thành công (${body.data.length} bản ghi)`);
+    } else if (res.status === 404) {
+        t.diagnostic('-> 404 Not Found: Hoạt động không tồn tại');
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi xử lý phía server');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 9: ${res.status}`);
+    }
+});
+
+// 10. GET /api/registrations/me
+test('API 10: GET /api/registrations/me - Lấy danh sách hoạt động cá nhân đã đăng ký', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/registrations/me`, {
+        headers: { 'X-User-Id': DEFAULT_USER_ID },
+    });
+    const contentType = res.headers.get('content-type');
+    assert.ok(contentType && contentType.includes('application/json'));
+
+    if (res.status === 200) {
+        const body = await res.json();
+        assert.ok(Array.isArray(body.data));
+        t.diagnostic(`-> 200 OK: Lấy danh sách cá nhân thành công (${body.data.length} hoạt động)`);
+    } else if (res.status === 500) {
+        t.diagnostic('-> 500 Internal Server Error: Lỗi máy chủ khi lấy danh sách đăng ký cá nhân');
+    } else {
+        assert.fail(`Mã HTTP không hợp lệ cho API 10: ${res.status}`);
+    }
+});
+
+// =========================================================================
+// PHẦN 2: KIỂM THỬ CÁC NHÓM LỖI ĐÃ GHI NHẬN TRONG MỤC 3 & 4.3 API.MD
+// =========================================================================
+
+// Nhóm: Thiếu dữ liệu (Mục 3.4 & 4.3)
+test('Kiểm thử lỗi [Thiếu dữ liệu]: POST /api/activities thiếu trường bắt buộc -> 400 Bad Request', async (t) => {
     const res = await fetch(`${BASE_URL}/api/activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
     });
-    // Hàm createActivity kiểm tra dữ liệu đầu vào trước khi query DB nên trả về 400
     assert.equal(res.status, 400);
+    const data = await res.json();
+    assert.equal(data.error, 'Vui lòng điền đầy đủ các trường bắt buộc');
+    t.diagnostic(`-> 400 Bad Request: ${data.error}`);
 });
 
-test('API POST /api/activities/1/registrations - Phản hồi JSON hợp lệ khi đăng ký', async () => {
-    const res = await fetch(`${BASE_URL}/api/activities/1/registrations`, {
+// Nhóm: Không tìm thấy khi đăng ký (Mục 3.7 & 4.3)
+test('Kiểm thử lỗi [Không tìm thấy]: POST /api/activities/999999/registrations -> 404 Not Found', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/999999/registrations`, {
+        method: 'POST',
+        headers: { 'X-User-Id': DEFAULT_USER_ID },
+    });
+    assert.equal(res.status, 404);
+    t.diagnostic('-> 404 Not Found: Hoạt động không tồn tại');
+});
+
+// Nhóm: Trùng lặp & Hết chỗ (Mục 3.7 & 4.3)
+test('Kiểm thử lỗi [Trùng lặp & Hết chỗ]: POST /api/activities/:id/registrations -> 409 Conflict', async (t) => {
+    const createRes = await fetch(`${BASE_URL}/api/activities`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+            title: 'Hoạt động test 1 chỗ',
+            description: 'Kiểm thử trùng lặp và hết chỗ',
+            location: 'PM01',
+            start_at: '2026-12-20T08:00:00',
+            end_at: '2026-12-20T10:00:00',
+            capacity: 1,
+        }),
     });
-    const contentType = res.headers.get('content-type');
-    assert.ok(contentType && contentType.includes('application/json'));
-    assert.ok([201, 400, 404, 409, 500].includes(res.status));
+    const { id: tempId } = await createRes.json();
+
+    // User 1 đăng ký lần 1 (Thành công - 201)
+    const firstRes = await fetch(`${BASE_URL}/api/activities/${tempId}/registrations`, {
+        method: 'POST',
+        headers: { 'X-User-Id': '1' },
+    });
+    assert.equal(firstRes.status, 201);
+
+    // 1. User 1 đăng ký lại lần 2 -> 409 Trùng lặp
+    const dupRes = await fetch(`${BASE_URL}/api/activities/${tempId}/registrations`, {
+        method: 'POST',
+        headers: { 'X-User-Id': '1' },
+    });
+    assert.equal(dupRes.status, 409);
+    t.diagnostic('-> 409 Conflict: Người dùng đã đăng ký hoạt động (Trùng lặp)');
+
+    // 2. User 2 đăng ký khi capacity = 1 đã đầy -> 409 Hết chỗ
+    const fullRes = await fetch(`${BASE_URL}/api/activities/${tempId}/registrations`, {
+        method: 'POST',
+        headers: { 'X-User-Id': '2' },
+    });
+    assert.equal(fullRes.status, 409);
+    t.diagnostic('-> 409 Conflict: Hoạt động đã hết chỗ');
 });
 
-test('API DELETE /api/activities/1/registrations/me - Phản hồi JSON hợp lệ khi hủy', async () => {
-    const res = await fetch(`${BASE_URL}/api/activities/1/registrations/me`, {
+// Nhóm: Chưa đăng ký mà bấm hủy (Mục 3.8 & 4.3)
+test('Kiểm thử lỗi [Chưa đăng ký]: DELETE /api/activities/999999/registrations/me -> 404 Not Found', async (t) => {
+    const res = await fetch(`${BASE_URL}/api/activities/999999/registrations/me`, {
         method: 'DELETE',
+        headers: { 'X-User-Id': DEFAULT_USER_ID },
     });
-    const contentType = res.headers.get('content-type');
-    assert.ok(contentType && contentType.includes('application/json'));
-    assert.ok([200, 404, 500].includes(res.status));
+    assert.equal(res.status, 404);
+    t.diagnostic('-> 404 Not Found: Người dùng chưa đăng ký hoạt động');
 });
 
-test('API Router - Đường dẫn không tồn tại trả về status 404 và đúng định dạng lỗi', async () => {
+// Nhóm: Đường dẫn API không tồn tại
+test('Kiểm thử lỗi [Sai đường dẫn]: Router trả về 404 Not Found', async (t) => {
     const res = await fetch(`${BASE_URL}/api/duong-dan-khong-ton-tai`);
     assert.equal(res.status, 404);
-
     const data = await res.json();
     assert.deepEqual(data, { error: 'Không tìm thấy API' });
+    t.diagnostic('-> 404 Not Found: Không tìm thấy API');
 });
