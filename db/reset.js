@@ -12,6 +12,7 @@ const password = process.env.DB_PASSWORD || '';
 const candidatePaths = [
   'mariadb',
   'mysql',
+  'C:\\Program Files\\MariaDB 13.0\\bin\\mariadb.exe',
   'E:\\APP_LAPTRINH\\MariaDB_11.4\\bin\\mariadb.exe',
   'C:\\Program Files\\MariaDB 11.4\\bin\\mariadb.exe',
   'C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin\\mysql.exe',
