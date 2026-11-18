@@ -129,23 +129,200 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 4. Xử lý form tìm kiếm
+// ==========================================
+  // 4. XỬ LÝ DANH SÁCH HOẠT ĐỘNG, TÌM KIẾM & PHÂN TRANG ([FE-03])
+  // ==========================================
   const searchBtn = document.getElementById('btn-search');
   const searchInput = document.getElementById('search-input');
-  if (searchBtn && searchInput) {
-    searchBtn.addEventListener('click', () => {
-      const keyword = searchInput.value.trim();
-      if (keyword) {
-        alert(`Tính năng tìm kiếm với từ khóa "${keyword}" sẽ được kết nối với API Tuần 3 (Sprint 3: Backend API)!`);
-      } else {
-        alert('Vui lòng nhập từ khóa tìm kiếm (Ví dụ: "Hiến máu").');
+  const activityGrid = document.getElementById('activity-grid') || document.querySelector('.activity-grid');
+  const paginationWrapper = document.getElementById('pagination-wrapper') || document.querySelector('.pagination-wrapper');
+  const sectionCount = document.getElementById('section-count') || document.querySelector('.section-count');
+
+  const LIMIT = 6;
+
+  const cardThemes = [
+    { bg: 'linear-gradient(135deg, #fecdd3, #fda4af)', icon: '🩸', tagClass: 'tag-volunteer', tagName: 'Tình nguyện' },
+    { bg: 'linear-gradient(135deg, #bae6fd, #7dd3fc)', icon: '💻', tagClass: 'tag-tech', tagName: 'Học thuật' },
+    { bg: 'linear-gradient(135deg, #a7f3d0, #6ee7b7)', icon: '⚽', tagClass: 'tag-sports', tagName: 'Hoạt động' },
+    { bg: 'linear-gradient(135deg, #ddd6fe, #c4b5fd)', icon: '🌱', tagClass: 'tag-volunteer', tagName: 'Cộng đồng' },
+    { bg: 'linear-gradient(135deg, #fef08a, #fde047)', icon: '💡', tagClass: 'tag-tech', tagName: 'Sáng tạo' },
+    { bg: 'linear-gradient(135deg, #fed7aa, #fdba74)', icon: '🎸', tagClass: 'tag-sports', tagName: 'Văn hóa' }
+  ];
+
+  function formatDateTime(startStr, endStr) {
+    if (!startStr) return 'Đang cập nhật thời gian';
+    const start = new Date(startStr);
+    if (isNaN(start.getTime())) return startStr;
+
+    const datePart = start.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const startTime = start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+
+    if (endStr) {
+      const end = new Date(endStr);
+      if (!isNaN(end.getTime())) {
+        const endTime = end.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        return `${datePart} · ${startTime} - ${endTime}`;
       }
+    }
+    return `${datePart} · ${startTime}`;
+  }
+
+  function updateUrlParams(q, page) {
+    const params = new URLSearchParams(window.location.search);
+    if (q) {
+      params.set('q', q);
+    } else {
+      params.delete('q');
+    }
+    params.set('page', page);
+    window.history.pushState({ q, page }, '', `${window.location.pathname}?${params.toString()}`);
+  }
+
+  async function loadActivities(q = '', page = 1) {
+    if (!activityGrid) return;
+
+    // 1. Trạng thái Đang tải
+    activityGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: #64748b; font-size: 16px;">
+        ⏳ Đang tải danh sách hoạt động...
+      </div>
+    `;
+    if (paginationWrapper) paginationWrapper.innerHTML = '';
+
+    try {
+      const response = await fetch(`/api/activities?q=${encodeURIComponent(q)}&page=${page}&limit=${LIMIT}`);
+      if (!response.ok) {
+        throw new Error(`Lỗi máy chủ (${response.status})`);
+      }
+
+      const { data: items, pagination } = await response.json();
+
+      if (sectionCount) {
+        sectionCount.textContent = `Hiển thị ${items.length} / ${pagination.total} hoạt động`;
+      }
+
+      // 2. Trạng thái Không tìm thấy hoạt động nào
+      if (items.length === 0) {
+        activityGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: #64748b;">
+            <p style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">🔍 Không tìm thấy hoạt động nào</p>
+            <p>Không có hoạt động nào khớp với từ khóa "${q}". Vui lòng thử lại với từ khóa khác.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Render danh sách thẻ Card
+      activityGrid.innerHTML = items.map((item, index) => {
+        const theme = cardThemes[index % cardThemes.length];
+        const timeStr = formatDateTime(item.start_at, item.end_at);
+        const capacity = Number(item.capacity ?? 0);
+        const remaining = Number(item.remaining_seats ?? Math.max(0, capacity - Number(item.registered_count ?? 0)));
+
+        return `
+          <article class="activity-card" style="cursor: pointer;" onclick="window.location.href='activity.html?id=${item.id}'">
+            <div class="card-img-wrapper" style="background: ${theme.bg};">
+              <div style="font-size: 60px; text-align: center; line-height: 180px;">${theme.icon}</div>
+              <span class="card-badge ${theme.tagClass}">${item.category || theme.tagName}</span>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">${item.title}</h3>
+              <div class="card-meta-list">
+                <div class="meta-item">
+                  <span class="meta-icon">📍</span>
+                  <span>${item.location || 'Đang cập nhật địa điểm'}</span>
+                </div>
+                <div class="meta-item">
+                  <span class="meta-icon">⏰</span>
+                  <span>${timeStr}</span>
+                </div>
+              </div>
+              <div class="card-footer">
+                <div class="capacity-badge">
+                  <span>👥</span>
+                  <span>Còn ${remaining} / ${capacity} chỗ</span>
+                </div>
+                <a href="activity.html?id=${item.id}" class="btn-detail-link" onclick="event.stopPropagation()">Xem chi tiết &rarr;</a>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      renderPagination(q, pagination.page, pagination.totalPages);
+
+    } catch (error) {
+      // 3. Trạng thái Lỗi
+      console.error('Lỗi tải danh sách hoạt động:', error);
+      if (sectionCount) sectionCount.textContent = 'Lỗi tải dữ liệu';
+      activityGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; color: #ef4444;">
+          <p style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">⚠️ Đã xảy ra lỗi khi tải dữ liệu</p>
+          <p>${error.message || 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.'}</p>
+        </div>
+      `;
+    }
+  }
+
+  function renderPagination(q, currentPage, totalPages) {
+    if (!paginationWrapper || totalPages <= 1) {
+      if (paginationWrapper) paginationWrapper.innerHTML = '';
+      return;
+    }
+
+    let html = `<button type="button" class="page-btn" data-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''} aria-label="Trang trước">&larr;</button>`;
+
+    for (let i = 1; i <= totalPages; i++) {
+      html += `<button type="button" class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+    }
+
+    html += `<button type="button" class="page-btn" data-page="${currentPage + 1}" ${currentPage >= totalPages ? 'disabled' : ''} aria-label="Trang tiếp theo">&rarr;</button>`;
+
+    paginationWrapper.innerHTML = html;
+
+    paginationWrapper.querySelectorAll('.page-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        const targetPage = Number(btn.getAttribute('data-page'));
+        if (targetPage && targetPage !== currentPage) {
+          updateUrlParams(q, targetPage);
+          loadActivities(q, targetPage);
+        }
+      });
     });
-    
+  }
+
+  if (searchBtn && searchInput) {
+    const triggerSearch = () => {
+      const keyword = searchInput.value.trim();
+      updateUrlParams(keyword, 1);
+      loadActivities(keyword, 1);
+    };
+
+    searchBtn.addEventListener('click', triggerSearch);
+
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        searchBtn.click();
+        e.preventDefault();
+        triggerSearch();
       }
     });
   }
+
+  // Hỗ trợ nút Back / Forward trên trình duyệt đồng bộ lại danh sách theo URL
+  window.addEventListener('popstate', () => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q') || '';
+    const page = Number(params.get('page')) || 1;
+    if (searchInput) searchInput.value = q;
+    loadActivities(q, page);
+  });
+
+  // Khởi chạy lần đầu khi mở trang
+  const initialUrlParams = new URLSearchParams(window.location.search);
+  const initialQ = initialUrlParams.get('q') || '';
+  const initialPage = Number(initialUrlParams.get('page')) || 1;
+
+  if (searchInput) searchInput.value = initialQ;
+  loadActivities(initialQ, initialPage);
 });
