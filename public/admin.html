@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý hoạt động - UHL ACTIVE</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-content">
+      <a href="index.html" class="logo-wrapper">
+        <div class="logo-icon">U</div>
+        <div class="logo-text">
+          <span class="logo-title">UHL ACTIVE</span>
+          <span class="logo-subtitle">Quản trị CLB</span>
+        </div>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">Trang chủ</a></li>
+        <li><a href="admin.html" class="nav-link active">Hoạt động</a></li>
+        <li><a href="#" class="nav-link">Người dùng</a></li>
+        <li><a href="#" class="nav-link">Giới thiệu</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <span class="badge badge-primary">👤 Admin</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <ul class="admin-menu">
+        <li><a href="#" class="admin-menu-link">📊 Tổng quan</a></li>
+        <li><a href="admin.html" class="admin-menu-link active">📅 Hoạt động</a></li>
+        <li><a href="#" class="admin-menu-link">👥 Người dùng</a></li>
+        <li><a href="#" class="admin-menu-link">📄 Minh chứng</a></li>
+        <li><a href="#" class="admin-menu-link">⚙️ Cài đặt</a></li>
+      </ul>
+    </aside>
+
+    <!-- Bảng quản lý -->
+    <main class="admin-card">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title">Quản lý hoạt động</h1>
+          <p class="admin-subtitle">Danh sách tất cả hoạt động trong hệ thống</p>
+        </div>
+        <a href="admin-edit.html" class="btn btn-primary">+ Thêm mới</a>
+      </div>
+
+      <!-- Khu vực hiển thị Loading / Lỗi / Trống từ ui.js -->
+      <div id="status-container"></div>
+
+      <!-- Bảng dữ liệu -->
+      <div class="table-wrapper" id="table-container" style="display: none;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Hoạt động</th>
+              <th>Thời gian tổ chức</th>
+              <th>Số người đăng ký</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="activities-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Phân trang -->
+      <div id="pagination-container" style="margin-top: 20px;"></div>
+
+      <p class="admin-note">* Chỉ ADMIN được phép tạo, sửa và xóa hoạt động.</p>
+    </main>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import {
+      showLoading,
+      showError,
+      showEmpty,
+      showToast,
+      renderPagination,
+      formatDate,
+      buildQueryString
+    } from './js/ui.js';
+
+    const statusContainer = document.getElementById('status-container');
+    const tableContainer = document.getElementById('table-container');
+    const tbody = document.getElementById('activities-tbody');
+    const paginationContainer = document.getElementById('pagination-container');
+
+    let currentPage = 1;
+    const limit = 10;
+
+    async function loadActivities(page = 1) {
+      currentPage = page;
+      tableContainer.style.display = 'none';
+      paginationContainer.replaceChildren();
+      showLoading(statusContainer, 'Đang tải danh sách hoạt động...');
+
+      try {
+        const query = buildQueryString({ page, limit });
+        const res = await api('GET', `/api/activities${query}`);
+
+        // Tương thích cả 2 kiểu response từ backend: mảng trực tiếp hoặc { data: [...], pagination: {...} }
+        const items = Array.isArray(res) ? res : (res.data || res.activities || []);
+        const totalPages = res.pagination?.totalPages || res.totalPages || 1;
+
+        if (items.length === 0) {
+          showEmpty(statusContainer, 'Chưa có hoạt động nào trong hệ thống.');
+          return;
+        }
+
+        statusContainer.replaceChildren();
+        tableContainer.style.display = 'block';
+        renderRows(items);
+
+        renderPagination(paginationContainer, {
+          currentPage,
+          totalPages,
+          onPageChange: (newPage) => loadActivities(newPage)
+        });
+      } catch (err) {
+        showError(statusContainer, err.message || 'Không thể tải danh sách hoạt động.');
+      }
+    }
+
+    function renderRows(items) {
+      const fragment = document.createDocumentFragment();
+
+      items.forEach((item) => {
+        const tr = document.createElement('tr');
+
+        // Cột ID
+        const tdId = document.createElement('td');
+        tdId.textContent = String(item.id).padStart(2, '0');
+
+        // Cột Tên hoạt động
+        const tdTitle = document.createElement('td');
+        tdTitle.style.fontWeight = '600';
+        tdTitle.textContent = item.title || '';
+
+        // Cột Thời gian tổ chức
+        const tdTime = document.createElement('td');
+        tdTime.textContent = formatDate(item.start_time);
+
+        // Cột Số người đăng ký (vd: 32/50)
+        const tdSeats = document.createElement('td');
+        const registered = item.registered_count ?? item.registeredCount ?? 0;
+        const capacity = item.capacity ?? item.max_participants ?? 0;
+        tdSeats.textContent = `${registered}/${capacity}`;
+
+        // Cột Thao tác (Sửa & Xóa)
+        const tdActions = document.createElement('td');
+        const actionGroup = document.createElement('div');
+        actionGroup.className = 'action-group';
+
+        const editBtn = document.createElement('a');
+        editBtn.href = `admin-edit.html?id=${encodeURIComponent(item.id)}`;
+        editBtn.className = 'btn btn-sm btn-edit';
+        editBtn.textContent = '✏️ Sửa';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn btn-sm btn-danger';
+        deleteBtn.textContent = '🗑️ Xóa';
+        deleteBtn.addEventListener('click', () => handleDelete(item, deleteBtn));
+
+        actionGroup.append(editBtn, deleteBtn);
+        tdActions.appendChild(actionGroup);
+
+        tr.append(tdId, tdTitle, tdTime, tdSeats, tdActions);
+        fragment.appendChild(tr);
+      });
+
+      tbody.replaceChildren(fragment);
+    }
+
+    async function handleDelete(item, btn) {
+      const confirmed = window.confirm(
+        `Bạn có chắc chắn muốn xóa hoạt động "${item.title}" không?`
+      );
+      if (!confirmed) return;
+
+      btn.disabled = true;
+      try {
+        await api('DELETE', `/api/activities/${item.id}`);
+        showToast('Đã xóa hoạt động thành công!', 'success');
+        await loadActivities(currentPage);
+      } catch (err) {
+        showToast(err.message || 'Xóa hoạt động thất bại.', 'danger');
+        btn.disabled = false;
+      }
+    }
+
+    loadActivities(1);
+  </script>
+</body>
+</html>
