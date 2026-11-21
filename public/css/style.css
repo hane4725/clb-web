@@ -1081,3 +1081,126 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+/* ==============================================================================
+   11. ADMIN LAYOUT (Sidebar + Main Content)
+   ============================================================================== */
+.admin-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  padding-top: 28px;
+  padding-bottom: 48px;
+}
+
+@media (min-width: 769px) {
+  .admin-layout {
+    grid-template-columns: 230px 1fr;
+    align-items: start;
+  }
+}
+
+.admin-sidebar {
+  background: #ffffff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-menu {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-menu-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--slate-600);
+  transition: var(--transition);
+}
+
+.admin-menu-link:hover {
+  background: var(--slate-50);
+  color: var(--primary);
+}
+
+.admin-menu-link.active {
+  background: var(--primary-light);
+  color: var(--primary-hover);
+}
+
+.admin-card {
+  background: #ffffff;
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--slate-900);
+}
+
+.admin-subtitle {
+  font-size: 14px;
+  color: var(--slate-500);
+  margin-top: 2px;
+}
+
+.action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-edit {
+  background: var(--primary-light);
+  color: var(--primary-hover);
+}
+
+.btn-edit:hover {
+  background: #bae6fd;
+}
+
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .form-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.admin-note {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--slate-500);
+}

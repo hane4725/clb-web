@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tạo / Sửa hoạt động - UHL ACTIVE</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="container nav-content">
+      <a href="index.html" class="logo-wrapper">
+        <div class="logo-icon">U</div>
+        <div class="logo-text">
+          <span class="logo-title">UHL ACTIVE</span>
+          <span class="logo-subtitle">Quản trị CLB</span>
+        </div>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">Trang chủ</a></li>
+        <li><a href="admin.html" class="nav-link active">Hoạt động</a></li>
+        <li><a href="#" class="nav-link">Người dùng</a></li>
+        <li><a href="#" class="nav-link">Giới thiệu</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <span class="badge badge-primary">👤 Admin</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <ul class="admin-menu">
+        <li><a href="#" class="admin-menu-link">📊 Tổng quan</a></li>
+        <li><a href="admin.html" class="admin-menu-link active">📅 Hoạt động</a></li>
+        <li><a href="#" class="admin-menu-link">👥 Người dùng</a></li>
+        <li><a href="#" class="admin-menu-link">📄 Minh chứng</a></li>
+        <li><a href="#" class="admin-menu-link">⚙️ Cài đặt</a></li>
+      </ul>
+    </aside>
+
+    <!-- Form Tạo/Sửa -->
+    <main class="admin-card">
+      <div class="admin-header">
+        <div>
+          <h1 class="admin-title" id="page-title">Tạo hoạt động mới</h1>
+          <p class="admin-subtitle" id="page-subtitle">Điền thông tin để công bố hoạt động cho thành viên CLB</p>
+        </div>
+      </div>
+
+      <!-- Khung hiển thị Loading hoặc Lỗi validate -->
+      <div id="form-alert"></div>
+
+      <form id="activity-form">
+        <div class="form-group">
+          <label class="form-label" for="title">Tên hoạt động *</label>
+          <input
+            type="text"
+            id="title"
+            name="title"
+            class="form-control"
+            placeholder="Nhập tên hoạt động (tối thiểu 5 ký tự)"
+            minlength="5"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">Mô tả chi tiết</label>
+          <textarea
+            id="description"
+            name="description"
+            class="form-control"
+            rows="4"
+            placeholder="Nhập nội dung chi tiết hoạt động"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="location">Địa điểm *</label>
+          <input
+            type="text"
+            id="location"
+            name="location"
+            class="form-control"
+            placeholder="Nhập địa điểm tổ chức"
+            required
+          />
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label class="form-label" for="start_time">Thời gian bắt đầu *</label>
+            <input
+              type="datetime-local"
+              id="start_time"
+              name="start_time"
+              class="form-control"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="end_time">Thời gian kết thúc *</label>
+            <input
+              type="datetime-local"
+              id="end_time"
+              name="end_time"
+              class="form-control"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="capacity">Số chỗ tối đa *</label>
+          <input
+            type="number"
+            id="capacity"
+            name="capacity"
+            class="form-control"
+            placeholder="Nhập số nguyên dương (>= 1)"
+            min="1"
+            step="1"
+            required
+          />
+        </div>
+
+        <div class="action-group" style="margin-top: 24px;">
+          <button type="submit" id="submit-btn" class="btn btn-primary">Lưu hoạt động</button>
+          <a href="admin.html" class="btn btn-secondary">Hủy</a>
+        </div>
+
+        <p class="admin-note">
+          * Trường bắt buộc. Ngày kết thúc phải sau ngày bắt đầu, số chỗ tối đa phải lớn hơn hoặc bằng 1.
+        </p>
+      </form>
+    </main>
+  </div>
+
+  <script type="module">
+    import { api } from './js/api.js';
+    import {
+      parseQueryParams,
+      validateActivityForm,
+      showLoading,
+      showError,
+      showToast
+    } from './js/ui.js';
+
+    const { id } = parseQueryParams();
+    const isEditMode = Boolean(id);
+
+    const pageTitle = document.getElementById('page-title');
+    const pageSubtitle = document.getElementById('page-subtitle');
+    const formAlert = document.getElementById('form-alert');
+    const form = document.getElementById('activity-form');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // Chuyển đổi chuỗi ngày giờ từ API sang format YYYY-MM-DDTHH:mm cho input datetime-local
+    function toDateTimeLocalValue(isoString) {
+      if (!isoString) return '';
+      const d = new Date(isoString);
+      if (Number.isNaN(d.getTime())) return '';
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    // Nếu có ?id=... -> Tải dữ liệu cũ để chỉnh sửa
+    async function initEditMode() {
+      if (!isEditMode) return;
+
+      pageTitle.textContent = 'Chỉnh sửa hoạt động';
+      pageSubtitle.textContent = `Cập nhật thông tin cho hoạt động #${id}`;
+      form.style.display = 'none';
+      showLoading(formAlert, 'Đang tải thông tin hoạt động...');
+
+      try {
+        const res = await api('GET', `/api/activities/${id}`);
+        const item = res.data || res;
+
+        form.title.value = item.title || '';
+        form.description.value = item.description || '';
+        form.location.value = item.location || '';
+        form.start_time.value = toDateTimeLocalValue(item.start_time);
+        form.end_time.value = toDateTimeLocalValue(item.end_time);
+        form.capacity.value = item.capacity ?? item.max_participants ?? '';
+
+        formAlert.replaceChildren();
+        form.style.display = 'block';
+      } catch (err) {
+        showError(formAlert, err.message || 'Không tìm thấy dữ liệu hoạt động.');
+      }
+    }
+
+    // Xử lý lưu form (POST hoặc PATCH)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      formAlert.replaceChildren();
+
+      const payload = {
+        title: form.title.value.trim(),
+        description: form.description.value.trim(),
+        location: form.location.value.trim(),
+        start_time: form.start_time.value,
+        end_time: form.end_time.value,
+        capacity: Number(form.capacity.value)
+      };
+
+      // Kiểm tra bằng hàm dùng chung từ ui.js + check thêm địa điểm
+      const { valid, errors } = validateActivityForm(payload);
+      if (!payload.location) {
+        errors.location = 'Vui lòng nhập địa điểm tổ chức.';
+      }
+
+      if (!valid || Object.keys(errors).length > 0) {
+        const firstErrorMsg = Object.values(errors)[0];
+        showError(formAlert, firstErrorMsg);
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang lưu...';
+
+      try {
+        if (isEditMode) {
+          await api('PATCH', `/api/activities/${id}`, payload);
+          showToast('Cập nhật hoạt động thành công!', 'success');
+        } else {
+          await api('POST', '/api/activities', payload);
+          showToast('Tạo hoạt động mới thành công!', 'success');
+        }
+
+        // Chờ 700ms để người dùng kịp thấy thông báo rồi chuyển về trang danh sách
+        setTimeout(() => {
+          window.location.href = 'admin.html';
+        }, 700);
+      } catch (err) {
+        showError(formAlert, err.message || 'Có lỗi xảy ra khi lưu hoạt động.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Lưu hoạt động';
+      }
+    });
+
+    initEditMode();
+  </script>
+</body>
+</html>
