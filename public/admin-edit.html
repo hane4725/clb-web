@@ -162,7 +162,6 @@
     const form = document.getElementById('activity-form');
     const submitBtn = document.getElementById('submit-btn');
 
-    // Chuyển đổi chuỗi ngày giờ từ API sang format YYYY-MM-DDTHH:mm cho input datetime-local
     function toDateTimeLocalValue(isoString) {
       if (!isoString) return '';
       const d = new Date(isoString);
@@ -171,7 +170,7 @@
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     }
 
-    // Nếu có ?id=... -> Tải dữ liệu cũ để chỉnh sửa
+    // Tải dữ liệu cũ khi Sửa (đọc đúng start_at và end_at từ backend)
     async function initEditMode() {
       if (!isEditMode) return;
 
@@ -181,15 +180,14 @@
       showLoading(formAlert, 'Đang tải thông tin hoạt động...');
 
       try {
-        const res = await api('GET', `/api/activities/${id}`);
-        const item = res.data || res;
+        const item = await api('GET', `/api/activities/${id}`);
 
         form.title.value = item.title || '';
         form.description.value = item.description || '';
         form.location.value = item.location || '';
-        form.start_time.value = toDateTimeLocalValue(item.start_time);
-        form.end_time.value = toDateTimeLocalValue(item.end_time);
-        form.capacity.value = item.capacity ?? item.max_participants ?? '';
+        form.start_time.value = toDateTimeLocalValue(item.start_at);
+        form.end_time.value = toDateTimeLocalValue(item.end_at);
+        form.capacity.value = item.capacity ?? '';
 
         formAlert.replaceChildren();
         form.style.display = 'block';
@@ -203,7 +201,7 @@
       e.preventDefault();
       formAlert.replaceChildren();
 
-      const payload = {
+      const rawData = {
         title: form.title.value.trim(),
         description: form.description.value.trim(),
         location: form.location.value.trim(),
@@ -212,9 +210,9 @@
         capacity: Number(form.capacity.value)
       };
 
-      // Kiểm tra bằng hàm dùng chung từ ui.js + check thêm địa điểm
-      const { valid, errors } = validateActivityForm(payload);
-      if (!payload.location) {
+      // Validate bằng hàm dùng chung trong ui.js
+      const { valid, errors } = validateActivityForm(rawData);
+      if (!rawData.location) {
         errors.location = 'Vui lòng nhập địa điểm tổ chức.';
       }
 
@@ -224,19 +222,28 @@
         return;
       }
 
+      // Đóng gói payload đúng tên cột start_at, end_at mà backend activities.js yêu cầu
+      const apiPayload = {
+        title: rawData.title,
+        description: rawData.description,
+        location: rawData.location,
+        start_at: rawData.start_time,
+        end_at: rawData.end_time,
+        capacity: rawData.capacity
+      };
+
       submitBtn.disabled = true;
       submitBtn.textContent = 'Đang lưu...';
 
       try {
         if (isEditMode) {
-          await api('PATCH', `/api/activities/${id}`, payload);
+          await api('PATCH', `/api/activities/${id}`, apiPayload);
           showToast('Cập nhật hoạt động thành công!', 'success');
         } else {
-          await api('POST', '/api/activities', payload);
+          await api('POST', '/api/activities', apiPayload);
           showToast('Tạo hoạt động mới thành công!', 'success');
         }
 
-        // Chờ 700ms để người dùng kịp thấy thông báo rồi chuyển về trang danh sách
         setTimeout(() => {
           window.location.href = 'admin.html';
         }, 700);
